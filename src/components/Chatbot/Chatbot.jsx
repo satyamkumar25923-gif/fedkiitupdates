@@ -13,6 +13,7 @@ import styles from './Chatbot.module.scss';
 import { IoCloseOutline, IoSend, IoMic, IoMicOff, IoRefreshOutline, IoSparkles } from 'react-icons/io5';
 import { BiSolidMessageSquareDetail } from 'react-icons/bi';
 import { FiLogIn } from 'react-icons/fi';
+import { FaGithub, FaLinkedin } from 'react-icons/fa';
 import { chatbotService } from '../../services/chatbot';
 import AuthContext from '../../context/AuthContext';
 import FedLogo from '../../assets/images/FedLogo.png';
@@ -504,7 +505,9 @@ const Chatbot = () => {
     const cleanMessage = (text) => {
         if (!text) return '';
 
-        const cleanText = text
+        const cleanUrl = (u) => (u ? u.trim().replace(/[.,;)]+$/, '') : '');
+
+        let cleanText = text
             .replace(/<a\s+href="[^"]*"\s*>([^<]*)<\/a>/gi, '$1')
             .replace(/<a\s+href='[^']*'\s*>([^<]*)<\/a>/gi, '$1')
             .replace(/<a>([^<]*)<\/a>/gi, '$1')
@@ -518,7 +521,19 @@ const Chatbot = () => {
             .replace(/\[([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\]\(mailto:[^)]+\)/gi, '$1')
             .replace(/\[([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\]\(https:\/\/mail\.google\.com[^)]+\)/gi, '$1')
             .replace(/(?<!\/)@fedkiit(?!\/)/gi, '[@fedkiit](https://www.instagram.com/fedkiit/)')
-            .replace(/(?<!\[)([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?!\])/g, '[$1](https://mail.google.com/mail/?view=cm&to=$1)');
+            .replace(/(?<!\[)([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?!\])/g, '[$1](https://mail.google.com/mail/?view=cm&to=$1)')
+            // Convert bracketed pairs: [LinkedIn: url1, GitHub: url2] or [GitHub: url1, LinkedIn: url2]
+            .replace(/\[\s*LinkedIn:\s*(https?:\/\/[^\s,\]]+),\s*GitHub:\s*(https?:\/\/[^\s,\]]+)\s*\]/gi, (_, u1, u2) => `([LinkedIn](${cleanUrl(u1)}) [GitHub](${cleanUrl(u2)}))`)
+            .replace(/\[\s*GitHub:\s*(https?:\/\/[^\s,\]]+),\s*LinkedIn:\s*(https?:\/\/[^\s,\]]+)\s*\]/gi, (_, u1, u2) => `([GitHub](${cleanUrl(u1)}) [LinkedIn](${cleanUrl(u2)}))`)
+            // Convert single bracketed [LinkedIn: url] or [GitHub: url]
+            .replace(/\[\s*LinkedIn:\s*(https?:\/\/[^\s,\]]+)\s*\]/gi, (_, u) => `[LinkedIn](${cleanUrl(u)})`)
+            .replace(/\[\s*GitHub:\s*(https?:\/\/[^\s,\]]+)\s*\]/gi, (_, u) => `[GitHub](${cleanUrl(u)})`)
+            // Convert unbracketed LinkedIn: url or GitHub: url
+            .replace(/(?:LinkedIn|Linkedin):\s*(https?:\/\/(?:www\.)?linkedin\.com\/[^\s,\]\)<]+)/gi, (_, u) => `[LinkedIn](${cleanUrl(u)})`)
+            .replace(/(?:GitHub|Github):\s*(https?:\/\/(?:www\.)?github\.com\/[^\s,\]\)<]+)/gi, (_, u) => `[GitHub](${cleanUrl(u)})`)
+            // Standalone raw GitHub or LinkedIn URLs not already inside [text](url)
+            .replace(/(?<!\]\(|href=["'])(https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s,\]\)<]+)(?!\))/gi, (_, u) => `[LinkedIn](${cleanUrl(u)})`)
+            .replace(/(?<!\]\(|href=["'])(https?:\/\/(?:www\.)?github\.com\/[a-zA-Z0-9_.-]+(?:\/[a-zA-Z0-9_.-]+)*\/?)(?!\))/gi, (_, u) => `[GitHub](${cleanUrl(u)})`);
 
         if (typeof window !== 'undefined' && DOMPurify && typeof DOMPurify.sanitize === 'function') {
             return DOMPurify.sanitize(cleanText);
@@ -528,7 +543,8 @@ const Chatbot = () => {
 
     /**
      * Active Link Renderer Component
-     * Handles both internal App Router navigation and external hyperlinks cleanly
+     * Handles both internal App Router navigation and external hyperlinks cleanly,
+     * with special rich badges for GitHub and LinkedIn links.
      */
     const LinkRenderer = ({ href, children }) => {
         let normalizedHref = href || '';
@@ -562,6 +578,46 @@ const Chatbot = () => {
             return (
                 <a href={normalizedHref} onClick={handleClick} className={styles.chatLink}>
                     {children}
+                </a>
+            );
+        }
+
+        const hrefStr = typeof href === 'string' ? href : '';
+        const childText = Array.isArray(children)
+            ? children.map((c) => (typeof c === 'string' ? c : '')).join('')
+            : (typeof children === 'string' ? children : '');
+
+        const isGithub = /github\.com/i.test(hrefStr) || /^github$/i.test(childText.trim());
+        const isLinkedin = /linkedin\.com/i.test(hrefStr) || /^linkedin$/i.test(childText.trim());
+
+        if (isGithub) {
+            const label = (!childText || childText.startsWith('http') || /github\.com/i.test(childText)) ? 'GitHub' : children;
+            return (
+                <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${styles.chatLink} ${styles.socialBadge} ${styles.githubBadge}`}
+                    title="Open GitHub Profile"
+                >
+                    <FaGithub className={styles.socialBadgeIcon} />
+                    <span>{label}</span>
+                </a>
+            );
+        }
+
+        if (isLinkedin) {
+            const label = (!childText || childText.startsWith('http') || /linkedin\.com/i.test(childText)) ? 'LinkedIn' : children;
+            return (
+                <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${styles.chatLink} ${styles.socialBadge} ${styles.linkedinBadge}`}
+                    title="Open LinkedIn Profile"
+                >
+                    <FaLinkedin className={styles.socialBadgeIcon} />
+                    <span>{label}</span>
                 </a>
             );
         }

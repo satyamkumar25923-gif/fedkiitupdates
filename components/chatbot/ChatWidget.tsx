@@ -3,9 +3,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+// @ts-ignore
 import Lottie from "lottie-react";
 
 import { sendMessageToBot, ConversationTurn } from "@/lib/chatbot/api";
+import { FaGithub, FaLinkedin } from "react-icons/fa";
 import styles from "./ChatWidget.module.scss";
 import foxAnimation from "@/public/lottie/fox_head_tilt.json";
 
@@ -231,7 +233,72 @@ export default function ChatWidget() {
                     msg.role === "user" ? styles.userBubble : styles.botBubble
                   }`}
                 >
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <ReactMarkdown
+                    components={{
+                      a: ({ href, children }) => {
+                        const hrefStr = typeof href === "string" ? href : "";
+                        const childText = Array.isArray(children)
+                          ? children.map((c) => (typeof c === "string" ? c : "")).join("")
+                          : typeof children === "string"
+                          ? children
+                          : "";
+
+                        const isGithub = /github\.com/i.test(hrefStr) || /^github$/i.test(childText.trim());
+                        const isLinkedin = /linkedin\.com/i.test(hrefStr) || /^linkedin$/i.test(childText.trim());
+
+                        if (isGithub) {
+                          const label = !childText || childText.startsWith("http") || /github\.com/i.test(childText) ? "GitHub" : children;
+                          return (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`${styles.socialBadge} ${styles.githubBadge}`}
+                              title="Open GitHub Profile"
+                            >
+                              <FaGithub className={styles.socialBadgeIcon} />
+                              <span>{label}</span>
+                            </a>
+                          );
+                        }
+
+                        if (isLinkedin) {
+                          const label = !childText || childText.startsWith("http") || /linkedin\.com/i.test(childText) ? "LinkedIn" : children;
+                          return (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`${styles.socialBadge} ${styles.linkedinBadge}`}
+                              title="Open LinkedIn Profile"
+                            >
+                              <FaLinkedin className={styles.socialBadgeIcon} />
+                              <span>{label}</span>
+                            </a>
+                          );
+                        }
+
+                        return (
+                          <a href={href} target="_blank" rel="noopener noreferrer">
+                            {children}
+                          </a>
+                        );
+                      },
+                    }}
+                  >
+                    {(() => {
+                      const cleanUrl = (u: string) => (u ? u.trim().replace(/[.,;)]+$/, "") : "");
+                      return msg.content
+                        .replace(/\[\s*LinkedIn:\s*(https?:\/\/[^\s,\]]+),\s*GitHub:\s*(https?:\/\/[^\s,\]]+)\s*\]/gi, (_, u1, u2) => `([LinkedIn](${cleanUrl(u1)}) [GitHub](${cleanUrl(u2)}))`)
+                        .replace(/\[\s*GitHub:\s*(https?:\/\/[^\s,\]]+),\s*LinkedIn:\s*(https?:\/\/[^\s,\]]+)\s*\]/gi, (_, u1, u2) => `([GitHub](${cleanUrl(u1)}) [LinkedIn](${cleanUrl(u2)}))`)
+                        .replace(/\[\s*LinkedIn:\s*(https?:\/\/[^\s,\]]+)\s*\]/gi, (_, u) => `[LinkedIn](${cleanUrl(u)})`)
+                        .replace(/\[\s*GitHub:\s*(https?:\/\/[^\s,\]]+)\s*\]/gi, (_, u) => `[GitHub](${cleanUrl(u)})`)
+                        .replace(/(?:LinkedIn|Linkedin):\s*(https?:\/\/(?:www\.)?linkedin\.com\/[^\s,\]\)<]+)/gi, (_, u) => `[LinkedIn](${cleanUrl(u)})`)
+                        .replace(/(?:GitHub|Github):\s*(https?:\/\/(?:www\.)?github\.com\/[^\s,\]\)<]+)/gi, (_, u) => `[GitHub](${cleanUrl(u)})`)
+                        .replace(/(?<!\]\(|href=["'])(https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s,\]\)<]+)(?!\))/gi, (_, u) => `[LinkedIn](${cleanUrl(u)})`)
+                        .replace(/(?<!\]\(|href=["'])(https?:\/\/(?:www\.)?github\.com\/[a-zA-Z0-9_.-]+(?:\/[a-zA-Z0-9_.-]+)*\/?)(?!\))/gi, (_, u) => `[GitHub](${cleanUrl(u)})`);
+                    })()}
+                  </ReactMarkdown>
                   <span className={styles.timestamp}>
                     {msg.timestamp.toLocaleTimeString([], {
                       hour: "2-digit",

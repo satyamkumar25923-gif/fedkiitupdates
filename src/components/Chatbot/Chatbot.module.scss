@@ -444,6 +444,66 @@ $mobile: 480px;
     }
 }
 
+.socialBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    margin: 2px 4px 2px 2px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-decoration: none !important;
+    border-bottom: none !important;
+    vertical-align: middle;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+
+    .socialBadgeIcon {
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+}
+
+.githubBadge {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f0f6fc !important;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.18);
+        color: #ffffff !important;
+        border-color: rgba(255, 255, 255, 0.45);
+        transform: translateY(-1.5px);
+        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+.linkedinBadge {
+    background: rgba(10, 102, 194, 0.2);
+    color: #70b5f9 !important;
+    border: 1px solid rgba(10, 102, 194, 0.45);
+    box-shadow: 0 2px 6px rgba(10, 102, 194, 0.2);
+
+    &:hover {
+        background: rgba(10, 102, 194, 0.38);
+        color: #ffffff !important;
+        border-color: #0077b5;
+        transform: translateY(-1.5px);
+        box-shadow: 0 4px 14px rgba(10, 102, 194, 0.45);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
 .loginButton {
     display: inline-flex;
     align-items: center;

@@ -215,7 +215,17 @@ async function fetchSignalContext(signal: keyof typeof SIGNAL_WORDS): Promise<st
         .slice(0, 40)
         .map(
           (m) =>
-            `- ${m.name} — ${m.title || humanizeAccess(m.access)}${m.year ? ` (year ${m.year})` : ""}`,
+            `- ${m.name} — ${m.title || humanizeAccess(m.access)}${m.year ? ` (year ${m.year})` : ""}${
+              (() => {
+                const links = [
+                  m.linkedin ? `[LinkedIn](${m.linkedin})` : null,
+                  m.github ? `[GitHub](${m.github})` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+                return links ? ` (${links})` : "";
+              })()
+            }`,
         )
         .join("\n");
       return `ALUMNI DATA (${alumni.length} members)\n${lines}`;
@@ -293,6 +303,7 @@ Do NOT guess or make up information. Use signal words so the system can fetch mo
 
 FORMATTING RULES
 Use Markdown only. Never emit HTML tags. Links must use [label](url) syntax — never a bare URL and never an <a> tag.
+When sharing details of team members or people with social links, format their profiles cleanly using markdown links: e.g. [LinkedIn](url) and [GitHub](url). NEVER display raw URLs or labels like "LinkedIn: https://..." or "[LinkedIn: https://...]".
 Keep answers short: two or three sentences for simple questions. Use a bulleted list when enumerating events or people.
 Translate role codes into readable titles, for example DIRECTOR_TECHNICAL becomes "Director of Technical".
 
@@ -323,13 +334,13 @@ async function buildContext(intents: DetectedIntents, isLoggedIn = false): Promi
             .slice(0, 60)
             .map((m) => {
               const links = [
-                m.linkedin ? `LinkedIn: ${m.linkedin}` : null,
-                m.github ? `GitHub: ${m.github}` : null,
+                m.linkedin ? `[LinkedIn](${m.linkedin})` : null,
+                m.github ? `[GitHub](${m.github})` : null,
               ]
                 .filter(Boolean)
-                .join(", ");
+                .join(" ");
               return `- ${m.name} — ${m.title || humanizeAccess(m.access)}${m.year ? ` (year ${m.year})` : ""
-                }${links ? ` [${links}]` : ""}`;
+                }${links ? ` (${links})` : ""}`;
             })
             .join("\n")
           : "- Roster is not published yet.";
